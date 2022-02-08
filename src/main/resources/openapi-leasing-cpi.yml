@@ -1,0 +1,789 @@
+---
+openapi: 3.0.0
+info:
+  title: Leasing CPI subscription API in Spain
+  description: API subscription for Leasing CPI for Spain
+  contact:
+    email: CRDF.FRCAPICE@bnpparibas.com
+  version: 1.0.0
+servers:
+- url: https://virtserver.swaggerhub.com/cardifhub/Leasing_CPI/1.0.0
+  description: IDP API Mocks
+security:
+- client-credentials: []
+tags:
+- name: Quotation
+  description: Pricing related endpoints
+- name: Subscription
+  description: Subscription related endpoints
+- name: Document
+  description: Document related endpoints
+paths:
+  /quotation:
+    post:
+      tags:
+      - Quotation
+      summary: Returns quotation for leasing CPI.
+      description: Returns calculated premium values for the given leasingContractTerm and monthlyLeasingRate. The calculation can also be configured by additional parameters.
+      operationId: getQuotation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuotationRequest'
+      responses:
+        "200":
+          description: The response of the quotation calculation contains the premium and insuredAmount attributes by default. Also the risks for which the calculation was done are provided. If no risks were provided as input parameter all possible combinations will be returned. If one also wants the detailed premium values for death, disablement and unemployment, the fileds=full parameter has to be provided in the request.successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuotationResponse'
+        "400":
+          description: invalid input, object invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: technical error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /subscription-data:
+    post:
+      tags:
+      - Subscription
+      summary: Create new leasing cpi subscription data.
+      description: Create a subscription entry based on user data, selected product insurance.
+      operationId: createSubscriptionData
+      requestBody:
+        description: Subscription data to add
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionRequest'
+      responses:
+        "201":
+          description: Subscription data entry created. Return full subscription. If necessary it is possible to extend it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+        "400":
+          description: invalid input, object invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "409":
+          description: an existing item already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: technical error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /documents/{documentId}:
+    get:
+      tags:
+      - Document
+      summary: Get the Terms and conditions document.
+      description: Download document for specific link.
+      operationId: getDocument
+      parameters:
+      - name: documentId
+        in: path
+        description: Id of the downloaded document
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Document file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: invalid input, object invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: technical error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    QuotationRequest:
+      properties:
+        brokerStatus:
+          type: string
+          enum:
+          - none
+          - full
+        channel:
+          type: string
+          enum:
+          - pos
+          - online
+          - classic
+        dateOfBirth:
+          type: string
+          format: date
+        fields:
+          type: string
+          enum:
+          - none
+          - full
+        leasingContractInceptionDate:
+          type: string
+          format: date
+        leasingContractTerm:
+          type: string
+        monthlyLeasingRate:
+          type: string
+        covers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Cover'
+        package:
+          $ref: '#/components/schemas/Package'
+    QuotationResponse:
+      properties:
+        quotations:
+          type: array
+          description: the list of quotations
+          items:
+            $ref: '#/components/schemas/Quotation'
+    Quotation:
+      type: object
+      properties:
+        insuranceTax:
+          type: number
+          format: double
+        insuredAmount:
+          type: number
+          description: The insured amount for the final customer. Monthly leasing rate + mobility (can be 0) + premium.
+          format: double
+        insuredAmountDeath:
+          type: number
+          description: The insured amount in case of the risk death based on the terms and conditions (Should be the monthly leasing rate).
+          format: double
+        insuredAmountDisablement:
+          type: number
+          description: |-
+            The insured amount in case of the risk disablement based on the terms and conditions
+            (Should be the insuredAmount if risk is insured).
+          format: double
+        insuredAmountDreadDisease:
+          type: number
+          description: |-
+            The insured amount in case of the risk dread disease based on the terms and conditions
+            (Includes the mobility insurance and is calculated as a one off payment).
+          format: double
+        insuredAmountUnemployment:
+          type: number
+          description: |-
+            The insured amount in case of the risk unemployment based on the terms and conditions
+            (Should be the insuredAmount if risk is insured).
+          format: double
+        message:
+          type: string
+        premium:
+          type: number
+          description: The total premium.
+          format: double
+        premiumDeath:
+          type: number
+          description: The part of the premium for the risk death.
+          format: double
+        premiumDisablement:
+          type: number
+          description: The part of the premium for the risk disablement / temporary disease.
+          format: double
+        premiumDisablementAddition:
+          type: number
+          format: double
+        premiumDreadDisease:
+          type: number
+          description: The part of the premium for the risk dread disease.
+          format: double
+        premiumDreadDiseaseAddition:
+          type: number
+          format: double
+        premiumUnemployment:
+          type: number
+          description: The part of the premium for the risk unemployment
+          format: double
+        premiumUnemploymentAddition:
+          type: number
+          format: double
+        productName:
+          type: string
+        productShortName:
+          type: string
+        package:
+          type: string
+          description: A more friendly name of the list of risks.
+        covers:
+          uniqueItems: true
+          type: array
+          description: The list of the risks insured.
+          items:
+            $ref: '#/components/schemas/Cover'
+        sortOrder:
+          type: integer
+          format: int32
+    LegalEntity:
+      required:
+      - capital
+      - city
+      - legalStatus
+      - name
+      - postCode
+      - registration
+      - street
+      - streetNumber
+      type: object
+      properties:
+        name:
+          type: string
+          description: Business name
+        city:
+          maxLength: 30
+          type: string
+        street:
+          maxLength: 50
+          type: string
+        streetNumber:
+          maxLength: 10
+          type: string
+        postCode:
+          type: string
+        role:
+          type: string
+          example: insuredPerson
+          enum:
+          - insuredPerson
+          - coveredPerson
+        legalStatus:
+          type: string
+          example: legalEntity
+          enum:
+          - naturalPerson
+          - legalEntity
+      discriminator:
+        propertyName: legalStatus
+    NaturalPerson:
+      required:
+      - city
+      - countryOfBirth
+      - countryOfResidence
+      - email
+      - legalStatus
+      - name
+      - nationality
+      - phoneNumber
+      - placeOfBirth
+      - postCode
+      - street
+      - streetNumber
+      - surname
+      - title
+      type: object
+      properties:
+        name:
+          maxLength: 100
+          type: string
+        surname:
+          maxLength: 100
+          type: string
+        title:
+          $ref: '#/components/schemas/Title'
+        city:
+          maxLength: 30
+          type: string
+        street:
+          maxLength: 50
+          type: string
+        streetNumber:
+          maxLength: 10
+          type: string
+        postCode:
+          type: string
+        countryOfResidence:
+          maxLength: 10
+          type: string
+          description: In ISO 3166 alpha 3 code
+          example: DEU
+        nationality:
+          maxLength: 10
+          type: string
+          description: In ISO 3166 alpha 3 code
+          example: DEU
+        placeOfBirth:
+          maxLength: 50
+          type: string
+        countryOfBirth:
+          maxLength: 10
+          type: string
+          description: In ISO 3166 alpha 3 code
+          example: DEU
+        phoneNumber:
+          maxLength: 30
+          type: string
+        secondPhoneNumber:
+          maxLength: 30
+          type: string
+        email:
+          maxLength: 80
+          type: string
+        industry:
+          maxLength: 50
+          type: string
+          description: Describes the field of customer's employment
+        salutation:
+          type: string
+          description: required if type == naturalPerson
+          example: MS
+          enum:
+          - MR
+          - MS
+        role:
+          type: string
+          example: insuredPerson
+          enum:
+          - insuredPerson
+          - coveredPerson
+        legalStatus:
+          type: string
+          example: naturalPerson
+          enum:
+          - naturalPerson
+          - legalEntity
+      discriminator:
+        propertyName: legalStatus
+    BankAccountData:
+      required:
+      - bankAccountOwnerName
+      - bankAccountOwnerSurname
+      - iban
+      - sepaMandate
+      type: object
+      properties:
+        iban:
+          maxLength: 50
+          type: string
+        bankAccountOwnerName:
+          maxLength: 50
+          type: string
+        bankAccountOwnerSurname:
+          maxLength: 50
+          type: string
+        sepaMandate:
+          maxLength: 50
+          type: string
+    SubscriptionRequest:
+      type: object
+      properties:
+        bankAccountData:
+          $ref: '#/components/schemas/BankAccountData'
+        carManufacturer:
+          type: string
+          description: text, no value validation
+        carType:
+          type: string
+          description: text, no value validation
+        channel:
+          type: string
+          example: pos
+          enum:
+          - pos
+          - online
+        clientBusinessLine:
+          type: string
+          description: S (Seat), V (Volkswagen), A (Audi), E (AEB), K (Skoda), N (Volkswagen Nutzfahrzeuge)
+          example: S
+          enum:
+          - S
+          - V
+          - A
+          - E
+          - K
+          - "N"
+        insuredAmount:
+          multipleOf: 0.01
+          type: number
+          format: double
+          example: 296.23
+        isUsedCar:
+          type: boolean
+          example: false
+        leasingContractInceptionDate:
+          type: string
+          description: The preliminary inception date of the leasing contract (=delivery date of the car) as ISO-8601 date. The date can also be provided as a day date (Dyyyy-mm-dd), a month (Myyyy-mm) or a calendar week (Cyyyy-ww) or a quarter (Qyyyy-q). The age of the insured person is calculated based on this date and validated.
+          format: date
+          example: 2020-08-15
+        leasingContractNumber:
+          type: string
+          description: The leasing contract number can be provided with this attribute
+          example: L-513513
+        leasingContractTerm:
+          type: string
+          description: The leasing contract term in month to be used for premium calculation.
+          example: "12"
+        monthlyExternalServiceFees:
+          type: string
+          description: The sum of payments which are not collected by the partner. This must be included in the monthlyLeasingRate. In case of a claim, this part of the rate is paid directly to the customer's bank account, not to the partner.
+          example: "0"
+        monthlyLeasingRate:
+          type: string
+          description: The leasing rate to be insured. Accoding to the T&C,  this is includung taxes and all services. Must not include the premium (if calculated earlier). This is the full service rate. In EUR
+          example: "290"
+        organization:
+          type: string
+        originSystem:
+          type: string
+          description: 'required if channel = ''online'', '
+          example: HEYCAR
+        paCommission:
+          type: boolean
+          description: 'required if channel = ''online'', If payCommission == true, then the dealer data will be printed into the application document '
+          example: true
+        customers:
+          type: array
+          items:
+            discriminator:
+              propertyName: legalStatus
+            oneOf:
+            - $ref: '#/components/schemas/NaturalPerson'
+            - $ref: '#/components/schemas/LegalEntity'
+        premium:
+          type: number
+          description: A precalculated premium (e.g. from the GET /premium service ) could be provided here. It will be compared to the calculated premium and an error will be returned if they do not match.
+          format: double
+          example: 6.23
+        referenceNumber:
+          type: string
+          description: Unique contract reference number which must not change during the contract life time.
+          example: R3151351
+        package:
+          $ref: '#/components/schemas/Cover'
+        covers:
+          type: array
+          description: '"LRV", "LRVPlus", "Mobilitaet"'
+          example:
+          - LRV
+          - LRVPlus
+          items:
+            $ref: '#/components/schemas/Cover'
+        salesAgent:
+          $ref: '#/components/schemas/SalesAgent'
+        signatureMethod:
+          type: string
+          description: '''esignature'' = fully qualified electronic signature, ''inksignature'' = regular signatur ink on paper'
+          example: esignature
+        status:
+          type: string
+          example: APPLICATION
+          enum:
+          - OFFER
+          - APPLICATION_UNSIGNED
+          - APPLICATION
+          - CONTRACT
+        contractId:
+          type: string
+          description: contract identifier, will be returned in reply
+          example: P00001500353013510
+        transactionId:
+          type: string
+          description: transaction identifier, will be returned in reply
+          example: T00001500353013510
+    SubscriptionResponse:
+      type: object
+      properties:
+        bankAccountData:
+          $ref: '#/components/schemas/BankAccountData'
+        carManufacturer:
+          type: string
+          description: text, no value validation
+        carType:
+          type: string
+          description: text, no value validation
+        channel:
+          type: string
+          example: pos
+          enum:
+          - pos
+          - online
+        clientBusinessLine:
+          type: string
+          description: S (Seat), V (Volkswagen), A (Audi), E (AEB), K (Skoda), N (Volkswagen Nutzfahrzeuge)
+          example: S
+          enum:
+          - S
+          - V
+          - A
+          - E
+          - K
+          - "N"
+        insuredAmount:
+          multipleOf: 0.01
+          type: number
+          format: double
+          example: 296.23
+        isUsedCar:
+          type: boolean
+          example: false
+        leasingContractInceptionDate:
+          type: string
+          description: The preliminary inception date of the leasing contract (=delivery date of the car) as ISO-8601 date. The date can also be provided as a day date (Dyyyy-mm-dd), a month (Myyyy-mm) or a calendar week (Cyyyy-ww) or a quarter (Qyyyy-q). The age of the insured person is calculated based on this date and validated.
+          format: date
+          example: 2020-08-15
+        leasingContractNumber:
+          type: string
+          description: The leasing contract number can be provided with this attribute
+          example: L-513513
+        leasingContractTerm:
+          type: string
+          description: The leasing contract term in month to be used for premium calculation.
+          example: "12"
+        monthlyExternalServiceFees:
+          type: string
+          description: The sum of payments which are not collected by the partner. This must be included in the monthlyLeasingRate. In case of a claim, this part of the rate is paid directly to the customer's bank account, not to the partner.
+          example: "0"
+        monthlyLeasingRate:
+          type: string
+          description: The leasing rate to be insured. Accoding to the T&C,  this is includung taxes and all services. Must not include the premium (if calculated earlier). This is the full service rate. In EUR
+          example: "290"
+        organization:
+          type: string
+        originSystem:
+          type: string
+          description: 'required if channel = ''online'', '
+          example: HEYCAR
+        paCommission:
+          type: boolean
+          description: 'required if channel = ''online'', If payCommission == true, then the dealer data will be printed into the application document '
+          example: true
+        customers:
+          type: array
+          items:
+            discriminator:
+              propertyName: legalStatus
+            oneOf:
+            - $ref: '#/components/schemas/NaturalPerson'
+            - $ref: '#/components/schemas/LegalEntity'
+        premium:
+          type: number
+          description: A precalculated premium (e.g. from the GET /premium service ) could be provided here. It will be compared to the calculated premium and an error will be returned if they do not match.
+          format: double
+          example: 6.23
+        referenceNumber:
+          type: string
+          description: Unique contract reference number which must not change during the contract life time.
+          example: R3151351
+        package:
+          type: string
+          example: LRVPlus
+          enum:
+          - LRV
+          - LRVPlus
+          - LRVMobilitaet
+          - LRVPlusMobilitaet
+        covers:
+          type: array
+          description: '"LRV", "LRVPlus", "Mobilitaet"'
+          example:
+          - LRV
+          - LRVPlus
+          items:
+            type: string
+        salesAgent:
+          $ref: '#/components/schemas/SalesAgent'
+        signatureMethod:
+          type: string
+          description: '''esignature'' = fully qualified electronic signature, ''inksignature'' = regular signatur ink on paper'
+          example: esignature
+        status:
+          type: string
+          example: APPLICATION
+          enum:
+          - OFFER
+          - APPLICATION_UNSIGNED
+          - APPLICATION
+          - CONTRACT
+        transactionId:
+          type: string
+          description: transaction identifier, will be returned in reply, not stored in COP
+          example: T00001500353013510
+    SalesAgent:
+      required:
+      - personId
+      type: object
+      properties:
+        name:
+          maxLength: 50
+          type: string
+          description: Sales agent's first name
+          example: Vanessa
+        surname:
+          maxLength: 50
+          type: string
+          description: Sales agent's last name
+          example: Wagner
+        email:
+          maxLength: 80
+          type: string
+          description: Sales agent's email
+          example: vanessa.wagner@autohaus-volker-werner.eu
+        brokerStatus:
+          type: string
+          description: "Applies a premium cut to 500 EUR / year if the agent is not an insurance broker (none). To allow yearly premiums over 500 EUR this has to be set to 'full'.\r\n\r\nFor Thunder this can be set to 'none' (which is also the default value), as consultants are not allowed to broker a yearly premium above 500 EUR. \r\n\r\nFor online channel this should be set to 'full' , as a end customer is allowed to apply for yearly premiums above 500 EUR.\r\n\r\nWhen the calculated yearly premium is above 500 EUR and brokerStatus is none, an error 08-063 will be returned."
+          example: full
+          enum:
+          - none
+          - full
+        personId:
+          type: string
+          description: Unique ID for the sales agent, required if channel != 'online'
+          example: 345342au
+      description: Sales agent information
+    SubscriptionEvent:
+      type: object
+      properties:
+        eventType:
+          $ref: '#/components/schemas/SubscriptionEventType'
+        eventTime:
+          type: string
+          format: datetime
+        subscriptionId:
+          maxLength: 36
+          type: string
+          description: affected subscription identifier
+        resourceId:
+          maxLength: 50
+          type: string
+          description: affected sub-resource identifier (document)
+      description: Capture subscription or its sub-resource status change, such as "Subscription rejected", "MMUW passed", "Document uploaded"
+    SubscriptionEventType:
+      type: string
+      enum:
+      - APPROVED
+      - DENIED
+      - MMUW_SUBMITTED
+      - MMUW_PROCESSING
+      - MMUW_APPROVED
+      - SUBSCRIPTION_PROCESSING
+      - DOCUMENT_APPROVED
+      - DOCUMENT_DECLINED
+    Cover:
+      type: string
+      enum:
+      - LRV
+      - LRVPlus
+      - Mobilitaet
+    Package:
+      type: string
+      enum:
+      - LRV
+      - LRVPlus
+      - LRVMobilitaet
+      - LRVPlusMobilitaet
+    RiskType:
+      type: string
+      enum:
+      - death-c24
+      - cancer-c24
+      - disability-c24
+      - unemployment-c24
+    PricingType:
+      type: string
+      enum:
+      - MONTHLY
+      - SINGLE
+      - BOTH
+    SmokingStatus:
+      type: string
+      description: Smoking status categories
+      enum:
+      - R
+      - NR10
+      - NR
+    Gender:
+      type: string
+      enum:
+      - MALE
+      - FEMALE
+      - OTHER
+    DocumentStatus:
+      type: string
+      enum:
+      - PREPARING
+      - READY
+      - SIGNED
+    Title:
+      type: string
+      description: Use it as beneficiary title, if OTHER beneficiary type is selectet
+      enum:
+      - MR
+      - MRS
+      - OTHER
+    Error:
+      required:
+      - code
+      - message
+      - status
+      type: object
+      properties:
+        status:
+          type: integer
+          description: The HTTP status code generated by the origin server for this occurrence of the problem.
+          format: int32
+        code:
+          type: string
+          description: A code that uniquely identifies the problem type only in the context of the provided API
+          example: MethodArgumentNotValidException
+        message:
+          type: string
+          description: A short summary of the problem type. Written in English and readable for engineers, usually not suited for non technical stakeholders and not localized.
+          example: Bad Request
+        timestamp:
+          type: string
+          description: The date and time of the error
+          example: 2021-12-14T11:05:26Z
+        details:
+          type: array
+          description: List of detailed error messages. Such as list of all validation errors
+          items:
+            $ref: '#/components/schemas/ErrorDetail'
+    ErrorDetail:
+      type: object
+      properties:
+        parameter:
+          type: string
+          description: Parameter that caused the problem
+          example: age
+        message:
+          type: string
+          description: Detail message of the problem
+          example: must be between 18 and 35
+  securitySchemes:
+    client-credentials:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://cardif-europe.apigee.dev.echonet/oauth2/v1/token
+          scopes: {}

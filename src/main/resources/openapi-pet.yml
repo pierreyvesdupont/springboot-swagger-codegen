@@ -43,15 +43,21 @@ paths:
       operationId: createPets
       tags:
         - pets
+      requestBody:
+        description: Pet to be added in petstore
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pet'
+        required: true
       responses:
-        '201':
-          description: Null response
-        default:
-          description: unexpected error
+        200:
+          description: Pet Added
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                type: string
+      x-codegen-request-body-name: pet
   /pets/{petId}:
     get:
       summary: Info for a specific pet
@@ -108,12 +114,17 @@ components:
           type: string
         tag:
           type: string          
+    Pet:
+      type: object
+      discriminator:
+        propertyName: legalStatus
+      oneOf:
+        - $ref: "#/components/schemas/Dog"
+        - $ref: "#/components/schemas/Cat"
     Pets:
       type: array
       items:
-        oneOf:
-          - $ref: "#/components/schemas/Dog"
-          - $ref: "#/components/schemas/Cat"
+        $ref: '#/components/schemas/Pet'
     Error:
       type: object
       required:
