@@ -2,9 +2,9 @@ package com.example.demo;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import io.tej.SwaggerCodgen.api.PetsApi;
+import io.tej.SwaggerCodgen.api.QuotationApi;
 
 @RestController
-public class PetController implements PetsApi {
+public class QuotationController implements QuotationApi {
     
 }

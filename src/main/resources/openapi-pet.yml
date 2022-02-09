@@ -48,7 +48,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pet'
+              oneOf:
+                - $ref: '#/components/schemas/Cat'
+                - $ref: '#/components/schemas/Dog'
         required: true
       responses:
         200:
@@ -114,17 +116,12 @@ components:
           type: string
         tag:
           type: string          
-    Pet:
-      type: object
-      discriminator:
-        propertyName: legalStatus
-      oneOf:
-        - $ref: "#/components/schemas/Dog"
-        - $ref: "#/components/schemas/Cat"
     Pets:
       type: array
       items:
-        $ref: '#/components/schemas/Pet'
+        oneOf:
+          - $ref: '#/components/schemas/Cat'
+          - $ref: '#/components/schemas/Dog'
     Error:
       type: object
       required:
